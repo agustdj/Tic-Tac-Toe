@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caro Game</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        #board { display: grid; grid-template-columns: repeat(3, 50px); gap: 5px; justify-content: center; }
+        .cell { width: 50px; height: 50px; border: 1px solid #000; display: flex; align-items: center; justify-content: center; font-size: 1.5em; cursor: pointer; }
+        .cell.taken { pointer-events: none; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>Caro Game</h1>
+    <div id="messages"></div>
+    <br >
+    <div id="board"></div>
+    <script>
+        const socket = io();
+        const messages = document.getElementById('messages');
+        const board = document.getElementById('board');
+        const size = 3;
+
+        // Create board UI
+        function createBoard() {
+            board.innerHTML = '';
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.x = i;
+                    cell.dataset.y = j;
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        // Update board UI
+        function updateBoard(boardState) {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                const x = cell.dataset.x;
+                const y = cell.dataset.y;
+                cell.textContent = boardState[x][y];
+                if (boardState[x][y]) {
+                    cell.classList.add('taken');
+                }
+            });
+        }
+
+        // Handle cell clicks
+        board.addEventListener('click', (event) => {
+            if (event.target.classList.contains('cell')) {
+                const x = event.target.dataset.x;
+                const y = event.target.dataset.y;
+                socket.emit('playMove', { x: parseInt(x), y: parseInt(y) });
+            }
+        });
+
+        // Socket events
+        socket.on('message', (msg) => {
+            messages.textContent = msg;
+        });
+
+        socket.on('updateBoard', (boardState) => {
+            updateBoard(boardState);
+        });
+
+        // Initialize board
+        createBoard();
+    </script>
+</body>
+</html>
